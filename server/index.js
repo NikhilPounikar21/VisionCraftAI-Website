@@ -11,76 +11,54 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// =======================
-// ✅ MIDDLEWARE
-// =======================
+// Crash logging
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
+});
+
+// Middleware
 app.use(cors({
-  origin: "*",
-  credentials: true
+  origin: "*"
 }));
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-// =======================
-// ✅ HEALTH CHECK
-// =======================
+// Routes
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "🚀 VisionCraftAI Backend Running Successfully"
-  });
+  res.json({ success: true, message: "Backend running" });
 });
 
-// =======================
-// ✅ ROUTES
-// =======================
 app.use("/api/generate-image", GenerateImageRouter);
 app.use("/api/creations", CreationRouter);
 
-// =======================
-// ✅ DATABASE CONNECTION
-// =======================
-const connectDB = async () => {
+// Start app
+async function startServer() {
   try {
-    console.log("🚀 Starting Server...");
-    console.log("📦 Checking Environment Variables...");
+    console.log("Starting server...");
 
     if (!process.env.MONGODB_URL) {
-      throw new Error("MONGODB_URL is missing");
+      throw new Error("MONGODB_URL missing");
     }
 
-    console.log("🔄 Connecting MongoDB...");
+    console.log("Connecting MongoDB...");
 
-    await mongoose.connect(process.env.MONGODB_URL, {
-      dbName: "visioncraft"
-    });
+    await mongoose.connect(process.env.MONGODB_URL);
 
-    console.log("✅ MongoDB Connected Successfully");
+    console.log("MongoDB Connected");
 
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
 
   } catch (error) {
-    console.error("❌ Server Startup Error:");
-    console.error(error.message);
+    console.error("STARTUP FAILED:", error);
     process.exit(1);
   }
-};
+}
 
-// =======================
-// ✅ HANDLE CRASH ERRORS
-// =======================
-process.on("unhandledRejection", (err) => {
-  console.error("❌ Unhandled Rejection:", err.message);
-});
-
-process.on("uncaughtException", (err) => {
-  console.error("❌ Uncaught Exception:", err.message);
-});
-
-// =======================
-// ✅ START APP
-// =======================
-connectDB();
+startServer();
